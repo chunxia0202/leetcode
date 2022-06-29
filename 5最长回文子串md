@@ -1,0 +1,159 @@
+# 思路
+
+```java
+//扩展中心；空间o(1),时间o(N^2);向左右扩展；
+//中心扩展法
+//先假设回文子串回文中心只有一个
+//然后将回文子串的start与长度temp保存
+//再假设回文子串的回文中心有偶数个
+//然后根据回文子串的长度不断的更新其回文子串的最大值与起点
+//最后返回回文子串start到start+temp间隔的子串
+//由于回文中心是偶数个的时候，回文中心取得是最左边那个
+//所以向左移比较的是i-j的值，右边是i+j+1的值，要越过第二个回文中心
+class Solution {
+    public String longestPalindrome(String s) {
+        int len=s.length();
+        int start=0;
+        int maxlen=0;
+        for(int i=0;i<len;i++){
+            for(int j=0;i-j>=0 && i+j<len;j++){
+                if(s.charAt(i-j)==s.charAt(i+j)){
+                    int temp=2*j+1;
+                    if(temp>maxlen){
+                        maxlen=temp;
+                        start=i-j;
+                    }
+                }else break;
+            }
+        }
+        if(len>1){
+            for(int i=0;i+1<len;i++){
+                for(int j=0;i-j>=0 && i+j+1<len;j++){
+                    if(s.charAt(i-j)==s.charAt(i+j+1)){
+                        int temp=2*j+2;
+                        if(temp>maxlen){
+                            maxlen=temp;
+                            start=i-j;
+                        }
+                    }else break;
+                }
+            }
+        }
+        return maxlen==0?"":s.substring(start,start+maxlen);
+    }
+}
+```
+
+![image-20211202093239689](C:\Users\28635\AppData\Roaming\Typora\typora-user-images\image-20211202093239689.png)
+
+![image-20211202093246588](C:\Users\28635\AppData\Roaming\Typora\typora-user-images\image-20211202093246588.png)
+
+![image-20211202093156396](C:\Users\28635\AppData\Roaming\Typora\typora-user-images\image-20211202093156396.png)
+
+```java
+//马拉车算法，时间复杂度降为o(N);
+class Solution {
+    public String longestPalindrome(String s) {
+        String T = preProcess(s);
+        int n = T.length();
+        int[] P = new int[n];
+        int C = 0, R = 0;//定义初始回文半径是0;
+//第一个字符和最后一个字符的回文半径均为0；所以只需遍历中间的n-2个字符即可；
+        for (int i = 1; i < n-1; i++) {
+           int i_mirror = 2 * C - i;//与i对应的i`;
+           if (R > i) {//i在R内,三种情况中，最小的长度也是;
+             P[i] = Math.min(R - i, P[i_mirror]);// 防止超出 R
+            } else {
+               P[i] = 0;// 等于 R 的情况//i大于等于R时,先定义其回文子串时0，然后再继续后文的遍历判断；
+            }
+
+        // 碰到之前讲的三种情况时候，需要利用中心扩展法
+        //i>R时需要扩展，i<R但i的左边界在c的左边界上也需要扩展；
+        //如果左右相等那么回文半径+1；
+            while (T.charAt(i +1+ P[i]) == T.charAt(i - 1-P[i])) {
+            P[i]++;
+        }
+
+        // 判断是否需要更新 R
+        //若当前i的回文半径大于R，那就更新R与C的位置；
+        if (i + P[i] > R) {
+            C = i;
+            R = i + P[i];
+        }
+
+    }
+
+    // 找出 P 的最大值
+       int maxLen = 0;
+       int centerIndex = 0;
+       for (int i = 1; i < n - 1; i++) {
+//第一个字符和最后一个字符的回文半径均为0；所以只需遍历中间的n-2个字符即可；
+          if (P[i] > maxLen) {
+            maxLen = P[i];
+            centerIndex = i;
+        }
+    }
+       int start = (centerIndex - maxLen) / 2; 
+//最开始原字符串下标：C的索引值-回文半径/2就是原字符串的索引值；
+      return s.substring(start, start + maxLen);//substring方法左闭右开，不取到start+len这个字符;
+}
+    private String preProcess(String s) {
+       int n = s.length();
+       if (n == 0) {
+        return "^$";
+       }
+       String ret = "^";
+       for (int i = 0; i < n; i++) ret += "#" + s.charAt(i);
+       ret += "#$";
+       return ret;
+}
+}
+```
+
+#### 动态规划解决：
+
+```java
+dp[i][j]表示字符串i-j之间的字符串是否为回文子串
+//时间o(n^2)
+//空间o(n^2)
+class Solution {
+    public String longestPalindrome(String s) {
+        int len=s.length();
+        int maxlen=1;
+        int start=0;
+        //长度小于2说明是单个字符，那就是回文子串
+        if(len<2) return s;
+        //长度预先设为len-len
+        boolean[][] dp = new boolean[len][len];
+        //将单个字符都初始化为回文子串
+        for(int i=0;i<len;i++){
+            dp[i][i]=true;
+        }
+        //长度从2开始，一直到len，开始找当前长度的左边界和有边界
+        for(int L=2;L<=len;L++){
+            //左边界可以无限到len-1，而右边届一旦越界则break;
+            for(int i=0;i<len;i++){
+                //当前长度子字符串的右边界
+                int j=L+i-1;
+                if(j>=len) break;
+                //当左右边界不相等，那么这个长度的子字符串肯定不是回文子串
+                if(s.charAt(i)!=s.charAt(j)){
+                    dp[i][j]=false;
+                    //如果是相等的并且左右边界长度<3，那就是回文子串，类似bb等
+                }else{
+                    if(j-i<3) dp[i][j]=true;
+                    //若左右边界长度>=3，那就要判断中间的字符串是否为回文子串
+                    else dp[i][j]=dp[i+1][j-1]; 
+                }
+                //若当前是回文子串并且左右边界>maxlen情况才更新值；
+                if(dp[i][j] && j-i+1>maxlen){
+                    maxlen=j-i+1;
+                    start=i;
+                }
+            }
+        }
+        return s.substring(start,start+maxlen);
+    }
+}
+```
+

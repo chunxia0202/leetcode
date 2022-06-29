@@ -1,0 +1,24 @@
+```java
+import java.util.*;
+public class Solution {
+    public int rob (int[] nums) {
+        int len=nums.length;
+        int max1=0,max2=0;
+        int[] dp=new int[len+1];
+        dp[0]=0;
+        dp[1]=0;//不偷第一家的最大金额
+        for(int i=2;i<=len;i++){
+           dp[i]=Math.max(dp[i-1],dp[i-2]+nums[i-1]);
+        }
+        max1=dp[len];
+        dp[1]=nums[0];//偷第一家的最大金额，偷第一家那么最后一家不可以偷
+        for(int i=2;i<=len;i++){
+            if(i==len) dp[i]=dp[i-1];
+            else dp[i]=Math.max(dp[i-1],dp[i-2]+nums[i-1]);
+        }
+        max2=dp[len];
+        return Math.max(max1,max2);
+}
+}
+```
+
